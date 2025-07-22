@@ -1,32 +1,48 @@
-// Add Firebase config here
+// ✅ Initialize Firebase
 const firebaseConfig = {
   apiKey: "YOUR_API_KEY",
   authDomain: "yourapp.firebaseapp.com",
   projectId: "yourapp",
   storageBucket: "yourapp.appspot.com",
-  messagingSenderId: "XXXXXX",
-  appId: "1:XXXX:web:XXXX"
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
+// Initialize Firebase App
 firebase.initializeApp(firebaseConfig);
+
+// Get Firebase Storage reference
 const storage = firebase.storage();
 
-document.getElementById("uploadForm").addEventListener("submit", function(e) {
+// ✅ Handle File Upload
+document.getElementById("uploadForm").addEventListener("submit", function (e) {
   e.preventDefault();
+
   const file = document.getElementById("fileInput").files[0];
-  if (!file) return;
+  const status = document.getElementById("status");
 
-  const uploadTask = storage.ref("uploads/" + file.name).put(file);
+  if (!file) {
+    status.textContent = "Please select a file.";
+    return;
+  }
 
-  uploadTask.on("state_changed", 
+  const storageRef = storage.ref("uploads/" + file.name);
+  const uploadTask = storageRef.put(file);
+
+  uploadTask.on(
+    "state_changed",
     (snapshot) => {
-      document.getElementById("status").textContent = "Uploading...";
+      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+      status.textContent = `Uploading... ${Math.floor(progress)}%`;
     },
     (error) => {
-      document.getElementById("status").textContent = "Error: " + error;
+      console.error("Upload failed:", error);
+      status.textContent = "❌ Upload failed. Check console.";
     },
     () => {
-      document.getElementById("status").textContent = "Upload complete!";
+      uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+        status.innerHTML = `✅ Upload complete!<br><a href="${downloadURL}" target="_blank">View File</a>`;
+      });
     }
   );
 });
